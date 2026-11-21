@@ -423,7 +423,7 @@
               <span class="qi">${icon('star')}</span><b>深渊试炼</b><span>30 波 · 三选一祝福 · 最高 ${s.trialBest || 0} 波</span>
             </button>
           </div>
-          <div class="news"><span class="tag">NOTICE</span><span class="small muted">原创企划 · 所有角色与剧情均为本作原创。v2.15 开放 8 章 96 关 · 101 位英雄。</span></div>
+          <div class="news"><span class="tag">NOTICE</span><span class="small muted">原创企划 · 所有角色与剧情均为本作原创。v2.16 开放 8 章 96 关 · 101 位英雄。</span></div>
         </aside>
       </div>
       ${tabbar('home')}
@@ -1271,7 +1271,7 @@
       <div class="panel" style="margin-top:18px">
         <div class="panel-title">关于</div>
         <p class="small muted" style="margin-top:8px">《汐境回响》原创企划。所有角色、剧情、UI 与音效均为本作原创，不含任何第三方游戏素材。</p>
-        <p class="small dim" style="margin-top:6px">v2.15 · 8 章 96 关 · 101 位英雄 · 9 类怪物</p>
+        <p class="small dim" style="margin-top:6px">v2.16 · 8 章 96 关 · 101 位英雄 · 9 类怪物</p>
       </div>
       ${tabbar('more')}
     </div>`;
@@ -1523,6 +1523,7 @@
         ${row('编队', '10 个上阵位；初始 5 个，每通关 1 章解锁 1 个')}
         ${row('战士', '可部署在道路上拦截敌人；基础生命/防御更高，护盾会吸收伤害；医生优先治疗战士')}
         ${row('医生', '所有治疗定位英雄，共 14 位；英雄页可用「医生」筛选')}
+        ${row('手机放置', '按住英雄卡拖到发光格；手指上方显示小卡，目标格会高亮')}
         ${row('底部导航', '主线 / 英雄 / 召唤 / 副本 / 更多')}
         ${row('返回按钮', '回到上一层；浏览器返回也可')}
         ${row('弹窗', '右上 × 或点遮罩关闭；祝福与结算需点按钮')}

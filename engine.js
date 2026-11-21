@@ -141,6 +141,15 @@
     buildRotateHint();
     buildBackground();
     window.addEventListener('resize', resize);
+    B._onOrient = () => {
+      if (!B) return;
+      clearTimeout(B._orient1); clearTimeout(B._orient2);
+      B._orient1 = setTimeout(() => { if (B) resize(); }, 120);
+      B._orient2 = setTimeout(() => { if (B) resize(); }, 480);
+    };
+    window.addEventListener('orientationchange', B._onOrient);
+    try { if (window.screen && screen.orientation && screen.orientation.addEventListener) screen.orientation.addEventListener('change', B._onOrient); } catch (e) {}
+    try { if (window.visualViewport && visualViewport.addEventListener) visualViewport.addEventListener('resize', B._onOrient); } catch (e) {}
     document.addEventListener('keydown', onKey);
 
     B.last = performance.now();
@@ -155,6 +164,12 @@
     if (!B) return;
     cancelAnimationFrame(B.raf);
     window.removeEventListener('resize', resize);
+    if (B._onOrient) {
+      window.removeEventListener('orientationchange', B._onOrient);
+      try { if (window.screen && screen.orientation && screen.orientation.removeEventListener) screen.orientation.removeEventListener('change', B._onOrient); } catch (e) {}
+      try { if (window.visualViewport && visualViewport.removeEventListener) visualViewport.removeEventListener('resize', B._onOrient); } catch (e) {}
+      clearTimeout(B._orient1); clearTimeout(B._orient2);
+    }
     document.removeEventListener('keydown', onKey);
     B.wrap.classList.add('hidden');
     B.wrap.classList.remove('bullet-time');
@@ -170,10 +185,10 @@
     el.innerHTML = `<div class="rh-card">
       <div class="rh-icon">⟳</div>
       <b>请横屏游玩</b>
-      <span>横屏视野更完整，战斗更爽</span>
+      <span>横屏视野更完整。若已横屏仍提示，请在控制中心关闭竖屏锁定。</span>
       <button class="btn sm ghost">仍然继续</button>
     </div>`;
-    B.wrap.appendChild(el);
+    document.body.appendChild(el);
     B.rotateEl = el;
     el.querySelector('button').onclick = () => {
       B.hintPause = false;
@@ -183,9 +198,32 @@
     updateRotate();
   }
 
+  function viewportSize() {
+    const vv = window.visualViewport;
+    if (vv && vv.width && vv.height) return { w: vv.width, h: vv.height };
+    return { w: window.innerWidth || 1, h: window.innerHeight || 1 };
+  }
+
+  function isPortraitViewport() {
+    let apiLandscape = null;
+    try {
+      if (window.screen && screen.orientation && screen.orientation.type) {
+        apiLandscape = String(screen.orientation.type).indexOf('landscape') === 0;
+      }
+    } catch (e) {}
+    const v = viewportSize();
+    // 强竖屏优先：即使设备的 orientation API 还没刷新，也不能把游戏挤在竖屏里
+    if (v.h > v.w * 1.18) return true;
+    if (apiLandscape === true) return false;
+    if (v.h <= v.w * 1.02) return false;
+    let mediaPortrait = null;
+    try { mediaPortrait = window.matchMedia && window.matchMedia('(orientation: portrait)').matches; } catch (e) {}
+    return mediaPortrait !== false;
+  }
+
   function updateRotate() {
     if (!B || !B.rotateEl) return;
-    const portrait = window.innerHeight > window.innerWidth;
+    const portrait = isPortraitViewport();
     if (portrait && !B.rotDismissed) {
       B.rotateEl.classList.remove('hidden');
       B.hintPause = true;
@@ -538,7 +576,7 @@
       const el = B.cardEls[i]; if (!el) return;
       el.classList.toggle('deployed', u.deployed);
       el.classList.toggle('selected', B.selected === i);
-      const cooling = !u.deployed && u.cdUntil > B.time;
+      const cooling = !u.deployed && u.cdUntil > Math.max(0, B.time);
       el.classList.toggle('cant', (!u.deployed && B.energy < u.def.cost) || cooling);
       el.classList.toggle('ready', u.deployed && u.energy >= 100);
       const nm = el.querySelector('.hc-name');
@@ -609,21 +647,27 @@
       else toast('该英雄已部署');
       return;
     }
-    if (u.cdUntil > B.time) { toast('复活中…'); return; }
+    if (u.cdUntil > Math.max(0, B.time)) { toast('复活中…'); return; }
     if (B.energy < u.def.cost) { toast('潮能不足'); return; }
     ev.preventDefault();
     B.selected = idx;
     setPlaceSlow(true);
     const sx = ev.clientX, sy = ev.clientY;
     let moved = false;
+    const coarse = !!(window.matchMedia && window.matchMedia('(pointer: coarse)').matches);
+    const gw = coarse ? 46 : 60;
+    const gh = coarse ? 34 : 44;
     const ghost = document.createElement('div');
     ghost.className = 'drag-ghost';
-    ghost.innerHTML = `<div class="hcard" style="width:76px"><div class="hc-art" style="height:60px">${TW.Art ? TW.Art.figure(u.def, { mini: true }) : ''}</div></div>`;
+    ghost.innerHTML = `<div class="hcard" style="width:${gw}px"><div class="hc-art" style="height:${gh}px">${TW.Art ? TW.Art.figure(u.def, { mini: true }) : ''}</div></div>`;
+    ghost.style.opacity = coarse ? '.72' : '.9';
     document.body.appendChild(ghost);
     const move = e => {
       if (Math.hypot(e.clientX - sx, e.clientY - sy) > 6) moved = true;
-      ghost.style.left = (e.clientX - 38) + 'px';
-      ghost.style.top = (e.clientY - 50) + 'px';
+      const gx = Math.max(6, Math.min(window.innerWidth - gw - 6, e.clientX - gw / 2));
+      const gy = Math.max(6, e.clientY - (coarse ? 84 : 56));
+      ghost.style.left = gx + 'px';
+      ghost.style.top = gy + 'px';
       const cell = screenToCell(e.clientX, e.clientY);
       B.hover = cell;
     };
@@ -650,7 +694,7 @@
   function tryDeploy(idx, c, r) {
     const u = B.units[idx];
     if (!u || u.deployed) return;
-    if (u.cdUntil > B.time) return toast('复活中…');
+    if (u.cdUntil > Math.max(0, B.time)) return toast('复活中…');
     if (B.energy < u.def.cost) return toast('潮能不足');
     if (!cellAllowed(u, c, r)) {
       if (isPathCell(c, r) && u.def.role !== 'guard') return toast('只有战士能放在道路上');
@@ -1034,7 +1078,7 @@
 
     B.units.forEach(u => {
       if (!u.deployed) {
-        if (u.cdUntil && u.cdUntil <= B.time) u.cdUntil = 0;
+        if (u.cdUntil && u.cdUntil <= Math.max(0, B.time)) u.cdUntil = 0;
         return;
       }
       u.buffs = u.buffs.filter(b => (b.t -= dt) > 0);
@@ -1726,6 +1770,31 @@
           : 'rgba(255,92,122,.15)';
         g.lineWidth = path ? 1.6 : 1; g.stroke();
       });
+      if (B.hover) {
+        const hv = B.hover;
+        const ok = cellAllowed(u, hv.c, hv.r) && cellFree(hv.c, hv.r);
+        const x = GRID.x + hv.c * CELL, y = GRID.y + hv.r * CELL;
+        const pulse = 0.5 + 0.5 * Math.sin(B.time * 7);
+        const col = ok ? '63,224,208' : '255,92,122';
+        g.save();
+        g.fillStyle = 'rgba(' + col + ',' + (0.16 + 0.10 * pulse) + ')';
+        roundRect(g, x + 2, y + 2, CELL - 4, CELL - 4, 12); g.fill();
+        g.strokeStyle = 'rgba(' + col + ',.95)';
+        g.lineWidth = 3;
+        g.shadowColor = 'rgba(' + col + ',.85)';
+        g.shadowBlur = 16 + 10 * pulse;
+        roundRect(g, x + 2, y + 2, CELL - 4, CELL - 4, 12); g.stroke();
+        g.shadowBlur = 0;
+        g.lineWidth = 4;
+        const L = 18;
+        g.beginPath();
+        g.moveTo(x + 8, y + 8 + L); g.lineTo(x + 8, y + 8); g.lineTo(x + 8 + L, y + 8);
+        g.moveTo(x + CELL - 8 - L, y + 8); g.lineTo(x + CELL - 8, y + 8); g.lineTo(x + CELL - 8, y + 8 + L);
+        g.moveTo(x + CELL - 8, y + CELL - 8 - L); g.lineTo(x + CELL - 8, y + CELL - 8); g.lineTo(x + CELL - 8 - L, y + CELL - 8);
+        g.moveTo(x + 8 + L, y + CELL - 8); g.lineTo(x + 8, y + CELL - 8); g.lineTo(x + 8, y + CELL - 8 - L);
+        g.stroke();
+        g.restore();
+      }
       if (B.hover && cellAllowed(u, B.hover.c, B.hover.r) && cellFree(B.hover.c, B.hover.r)) {
         const cx = GRID.x + B.hover.c * CELL + CELL / 2;
         const cy = GRID.y + B.hover.r * CELL + CELL / 2;
