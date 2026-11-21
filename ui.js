@@ -423,7 +423,7 @@
               <span class="qi">${icon('star')}</span><b>深渊试炼</b><span>30 波 · 三选一祝福 · 最高 ${s.trialBest || 0} 波</span>
             </button>
           </div>
-          <div class="news"><span class="tag">NOTICE</span><span class="small muted">原创企划 · 所有角色与剧情均为本作原创。v2.16 开放 8 章 96 关 · 101 位英雄。</span></div>
+          <div class="news"><span class="tag">NOTICE</span><span class="small muted">原创企划 · 所有角色与剧情均为本作原创。v2.17 开放 8 章 96 关 · 101 位英雄。</span></div>
         </aside>
       </div>
       ${tabbar('home')}
@@ -1271,7 +1271,7 @@
       <div class="panel" style="margin-top:18px">
         <div class="panel-title">关于</div>
         <p class="small muted" style="margin-top:8px">《汐境回响》原创企划。所有角色、剧情、UI 与音效均为本作原创，不含任何第三方游戏素材。</p>
-        <p class="small dim" style="margin-top:6px">v2.16 · 8 章 96 关 · 101 位英雄 · 9 类怪物</p>
+        <p class="small dim" style="margin-top:6px">v2.17 · 8 章 96 关 · 101 位英雄 · 9 类怪物</p>
       </div>
       ${tabbar('more')}
     </div>`;

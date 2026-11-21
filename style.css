@@ -1962,3 +1962,15 @@ body.custom-cursor #cursor-fx{display:block}
 
 /* 手机端拖放：避免页面滚动抢手势 */
 #battle,#battleWrap .hcard,#battleWrap .drag-ghost{touch-action:none}
+
+/* 窄屏手机首页顶栏：避免资源条把页面撑宽 */
+@media (max-width:480px){
+  .topbar{gap:6px;flex-wrap:nowrap}
+  .topbar .brand b{font-size:13px;letter-spacing:.04em}
+  .res{gap:4px}
+  .res-chip{padding:3px 6px;font-size:10px;gap:3px;min-width:0}
+  .res-chip .ricon{width:12px;height:12px}
+  .res-chip .plus{display:none}
+  .res-account .acc-name{display:none}
+  .res-account{padding:3px 5px}
+}

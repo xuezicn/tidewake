@@ -1,6 +1,6 @@
 # CREDITS
 
-《汐境回响 / TIDEWAKE》v2.16 — 原创企划
+《汐境回响 / TIDEWAKE》v2.17 — 原创企划
 
 ## 内容
 
