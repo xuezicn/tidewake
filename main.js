@@ -1044,7 +1044,7 @@
         TW.Audio.resume();
       }
     });
-    console.log('%c汐境回响 TIDEWAKE v2.19','color:#3fe0d0;font-weight:bold');
+    console.log('%c汐境回响 TIDEWAKE v2.20','color:#3fe0d0;font-weight:bold');
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);

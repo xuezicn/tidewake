@@ -1583,9 +1583,9 @@
         ring(e.x, e.y, '#ff5c7a', 0.9, 170);
       }
     }
-    // 战士在道路上拦截敌人
+    // 战士在道路上拦截敌人（首领也会被拦截；飞行单位除外）
     let blocker = null;
-    if (!e.flying && !e.boss) {
+    if (!e.flying) {
       let bd = 1e9;
       B.units.forEach(u => {
         if (!u.deployed || !u.onPath || u.hp <= 0) return;
@@ -1594,6 +1594,11 @@
       });
     }
     if (blocker) {
+      if (e.boss && !e._bossBlocked) {
+        e._bossBlocked = true;
+        addText(e.x, e.y - e.r - 26, '首领被拦截', '#ffca6b', false);
+        ring(e.x, e.y, '#ffca6b', 0.6, 72);
+      }
       e.blockedBy = blocker;
       e.blockAtkCd = (e.blockAtkCd || 0) - dt;
       if (e.blockAtkCd <= 0) {
@@ -1611,6 +1616,7 @@
       return;
     }
     e.blockedBy = null;
+    e._bossBlocked = false;
 
     const speed = e.speed * (e.slowT > 0 ? 0.7 : 1) * (e.speedBoost || 1) * chargeBoost;
     const target = e.path[e.seg + 1];
@@ -3297,7 +3303,7 @@
     },
     debugState: () => B ? { baseHp: B.baseHp, baseMax: B.baseMax, kills: B.kills, over: B.over, difficulty: B.difficulty, energy: B.energy, deployed: B.units.filter(u => u.deployed).length, time: B.time, selected: B.selected, combo: B.combo, burst: B.burst, burstReady: B.burstReady, waveCall: B.waveCallReady, spells: B.spells.map(sp => ({ id: sp.id, left: sp.left })), wavesCleared: B.waveIndex, telegraphs: B.telegraphs.length, bossPhase: B.bossPhase, placeSlow: B.placeSlow, timeScale: B.timeScale, blocked: B.enemies.filter(e => e.blockedBy && e.blockedBy.hp > 0).length, onPath: B.units.filter(u => u.onPath).length } : null,
     debugUnits: () => B ? B.units.filter(u => u.deployed).map(u => ({ name: u.def.name, x: Math.round(u.x), y: Math.round(u.y), atk: Math.round(u.stats.atk), range: +(u.stats.range * CELL).toFixed(0), hp: Math.round(u.hp), shield: Math.round(u.shield || 0) })) : [],
-    debugEnemies: () => B ? B.enemies.map(e => ({ name: e.name, hp: Math.round(e.hp), maxHp: Math.round(e.maxHp), dmg: +(+e.dmg).toFixed(2), speed: +(+e.speed).toFixed(1), leak: e.leak })) : [],
+    debugEnemies: () => B ? B.enemies.map(e => ({ name: e.name, boss: !!e.boss, flying: !!e.flying, blocked: !!(e.blockedBy && e.blockedBy.hp > 0), hp: Math.round(e.hp), maxHp: Math.round(e.maxHp), dmg: +(+e.dmg).toFixed(2), speed: +(+e.speed).toFixed(1), leak: e.leak })) : [],
     debugSpell: (id) => castSpell(id),
     debugBurst: () => { if (B) { B.burst = 100; B.burstReady = true; activateBurst(); } },
     debugWaveCall: () => callNextWave(),
