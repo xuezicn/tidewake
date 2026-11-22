@@ -283,6 +283,14 @@
           claimed: false, at: Date.now()
         });
       }
+      let gotDoctors = false;
+      if (!this.save.flags.doctorGift) {
+        this.save.flags.doctorGift = true;
+        ['qingnang', 'banxia'].forEach(id => {
+          if (!this.save.heroes[id]) { this.save.heroes[id] = freshHero(id); gotDoctors = true; }
+          if (!this.save.roster.includes(id)) this.save.roster.push(id);
+        });
+      }
       let gotMedic = false;
       if (!this.save.flags.medicGift) {
         this.save.flags.medicGift = true;
@@ -325,6 +333,7 @@
       this.gifted = !!(showGiftToast && got13);
       this.gifted2 = !!(showGiftToast && got20);
       this.medicGifted = !!(showGiftToast && gotMedic);
+      this.doctorGifted = !!(showGiftToast && gotDoctors);
       if (TW.Audio) {
         try {
           TW.Audio.setMaster(this.save.settings.vol);
@@ -1003,6 +1012,7 @@
     if (Game.gifted) setTimeout(() => TW.toast('v1.3 资源补给已发送到邮件', 'warn'), 1300);
     if (Game.gifted2) setTimeout(() => TW.toast('v2.0 深渊补给已发送到邮件', 'warn'), 1700);
     if (Game.medicGifted) setTimeout(() => TW.toast('新英雄「白芷」已加入，可在编队中上阵：优先治疗战士', 'warn'), 2600);
+    if (Game.doctorGifted) setTimeout(() => TW.toast('新医生「青囊（SSR）」「半夏（SR）」已加入英雄列表', 'warn'), 3000);
     if (TW.devReady) setTimeout(() => TW.toast('开发者账户已就绪：右上角账户切换', 'warn'), 2200);
 
     // 首次手势后创建/恢复 AudioContext（iOS / Safari 兼容）；后续点击也可以从系统中断中恢复
@@ -1034,7 +1044,7 @@
         TW.Audio.resume();
       }
     });
-    console.log('%c汐境回响 TIDEWAKE v2.18','color:#3fe0d0;font-weight:bold');
+    console.log('%c汐境回响 TIDEWAKE v2.19','color:#3fe0d0;font-weight:bold');
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);

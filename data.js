@@ -64,6 +64,12 @@ window.TW = window.TW || {};
       { name:'余音', desc:'每治疗 3 次，全队攻速 +8%，持续 5 秒。', key:'healHaste', value:0.08 },
       '她把每一次潮汐都写成乐谱，据说听完的人会梦见故乡。','别怕，潮水记得所有名字。'),
 
+    mk('qingnang','青囊','潮心医主','SSR','tide','healer',
+      { form:'robe', hair:'long', weapon:'staff', accent:'#ffe0a8', sig:'crown' },
+      { name:'潮心复律', desc:'治疗所有战士 260% 攻击力并额外回复 8% 最大生命，给予 18% 最大生命护盾 6 秒；若无战士，则治疗所有友军 180%。', kind:'healGuardTeam', mult:2.6, hpPct:0.08, fallback:1.8, shield:0.18, shieldDur:6, cd:12 },
+      { name:'医者仁心', desc:'战士生命低于 40% 时，自动为其回复 20% 最大生命并给予 10% 护盾（18 秒冷却）。', key:'guardSave', value:0.20, shield:0.10, cd:18 },
+      '她的药箱里没有名贵药材，只有一叠写满名字的布条。','名字还在，就不能让他沉下去。'),
+
     mk('jinyu','烬羽','灰烬巡猎','SSR','ember','ranger',
       { form:'hunter', hair:'short', weapon:'bow', accent:'#ff9a6a', scarf:'#ff7a4a' },
       { name:'焚羽连射', desc:'对单体造成 340% 攻击力伤害，并附加灼烧 4 秒。', kind:'single', mult:3.4, cd:9, burn:4 },
@@ -136,6 +142,12 @@ window.TW = window.TW || {};
       { name:'战地急救', desc:'优先治疗生命最低的战士 420% 攻击力并额外回复 8% 最大生命，给予 12% 最大生命护盾 5 秒；若无受伤战士，则治疗生命最低的友军 260%。', kind:'healGuard', mult:4.2, fallback:2.6, shield:0.12, shieldDur:5, cd:10 },
       { name:'随军医师', desc:'优先治疗战士，治疗战士时治疗量 +40% 且额外回复 2% 最大生命；每 4 秒自动为生命最低的战士回复 80% 攻击力 + 1.5% 最大生命。', key:'medic', value:0.4, aura:0.8, interval:4 },
       '她的药箱里一半是药，一半是给战士的糖。','先救站着的，再救倒下的。'),
+
+    mk('banxia','半夏','走方医者','SR','gale','healer',
+      { form:'robe', hair:'short', weapon:'staff', accent:'#a8e6a0', sig:'satchel' },
+      { name:'双生药引', desc:'治疗生命最低的两位友军各 220% 攻击力，优先选择战士。', kind:'healTwo', mult:2.2, cd:9 },
+      { name:'行医', desc:'治疗战士时治疗量 +20%，并给予 6% 最大生命护盾 4 秒。', key:'triage', value:0.20, shield:0.06, shieldDur:4 },
+      '她在每条商路上都留过一包药，收不收钱看当天风向。','别急着谢，先把药喝了。'),
 
     mk('ronghe','熔核','不熄的炉心','SR','ember','guard',
       { form:'guard', hair:'short', weapon:'fist', accent:'#ff9b70', sig:'mech' },
@@ -212,7 +224,7 @@ window.TW = window.TW || {};
       '他挖到的最后一件事物，是一扇门。','下面还有路。')
   ];
 
-  /* ---------- 扩充英雄：76 位（总计 100） ---------- */
+  /* ---------- 扩充英雄：78 位（总计 103） ---------- */
   const GEN_ROWS = [
     /* SSR 6 */
     ['沧溟','SSR','tide','mage','orb','long','crown'],

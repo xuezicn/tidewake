@@ -772,6 +772,47 @@
       }
       return;
     }
+    if (s.kind === 'healGuardTeam') {
+      const guards = B.units.filter(x => x.deployed && x.hp > 0 && x.def.role === 'guard')
+        .sort((a, b) => a.hp / a.maxHp - b.hp / b.maxHp);
+      const list = guards.length ? guards : B.units.filter(x => x.deployed && x.hp > 0);
+      list.forEach(t => {
+        if (guards.length) {
+          const gb = (u.def.doctor ? 1.15 : 1) * (u.def.passive.key === 'triage' ? 1 + u.def.passive.value : 1);
+          healUnit(t, (atk * s.mult + t.maxHp * (s.hpPct || 0)) * gb, true);
+          if (s.shield) {
+            t.shield = Math.max(t.shield, t.maxHp * s.shield);
+            t.shieldT = Math.max(t.shieldT, s.shieldDur || 6);
+          }
+          ring(t.x, t.y, '#ffe0a8', 0.7, 62);
+          beam(u.x, u.y - 20, t.x, t.y - 20, '#ffe0a8');
+        } else {
+          healUnit(t, atk * (s.fallback || 1.8), true);
+        }
+      });
+      burst(u.x, u.y, 28, '#ffe0a8', 180, 0.8);
+      return;
+    }
+    if (s.kind === 'healTwo') {
+      const pool = B.units.filter(x => x.deployed && x.hp > 0);
+      const guards = pool.filter(x => x.def.role === 'guard').sort((a, b) => a.hp / a.maxHp - b.hp / b.maxHp);
+      const others = pool.filter(x => x.def.role !== 'guard').sort((a, b) => a.hp / a.maxHp - b.hp / b.maxHp);
+      [...guards, ...others].slice(0, 2).forEach(t => {
+        let boost = hb;
+        if (t.def.role === 'guard') {
+          if (u.def.doctor) boost *= 1.15;
+          if (u.def.passive.key === 'triage') boost *= 1 + u.def.passive.value;
+        }
+        healUnit(t, atk * s.mult * boost, true);
+        if (t.def.role === 'guard' && u.def.passive.key === 'triage' && u.def.passive.shield) {
+          t.shield = Math.max(t.shield, t.maxHp * u.def.passive.shield);
+          t.shieldT = Math.max(t.shieldT, u.def.passive.shieldDur || 4);
+        }
+        ring(t.x, t.y, '#a8e6a0', 0.65, 48);
+        beam(u.x, u.y - 20, t.x, t.y - 20, '#a8e6a0');
+      });
+      return;
+    }
     if (s.kind === 'healAll') {
       B.units.filter(x => x.deployed).forEach(x => healUnit(x, atk * s.mult * hb, true));
       burst(u.x, u.y, 30, '#7ff3e6', 200, 0.8);
@@ -1042,7 +1083,7 @@
   /* ---------- 循环 ---------- */
   function loop(ts) {
     if (!B) return;
-    const raw = Math.min((ts - B.last) / 1000, 0.05);
+    const raw = Math.max(0, Math.min((ts - B.last) / 1000, 0.05));
     B.last = ts;
     if (B.ultSlowT > 0) B.ultSlowT = Math.max(0, B.ultSlowT - raw);
     B.timeScale = (B.ultSlowT > 0 ? 0.45 : 1) * (B.placeSlow ? 0.3 : 1);
@@ -1141,6 +1182,25 @@
       }
     }
 
+    // 医者仁心：战士濒危时自动急救
+    if (u.def.passive.key === 'guardSave') {
+      u.saveCd = Math.max(0, (u.saveCd || 0) - dt);
+      if (u.saveCd <= 0) {
+        const gt = B.units.filter(x => x.deployed && x.hp > 0 && x.def.role === 'guard' && x.hp <= x.maxHp * 0.40)
+          .sort((a, b) => a.hp / a.maxHp - b.hp / b.maxHp)[0];
+        if (gt) {
+          u.saveCd = u.def.passive.cd || 18;
+          healUnit(gt, gt.maxHp * (u.def.passive.value || 0.20) + u.stats.atk * 1.2, true);
+          gt.shield = Math.max(gt.shield, gt.maxHp * (u.def.passive.shield || 0.10));
+          gt.shieldT = Math.max(gt.shieldT, 5);
+          addText(gt.x, gt.y - 72, '医嘱 · 急救', '#ffe0a8', true);
+          ring(gt.x, gt.y, '#ffe0a8', 0.8, 68);
+          beam(u.x, u.y - 20, gt.x, gt.y - 20, '#ffe0a8');
+          sfx('spell_heal');
+        }
+      }
+    }
+
     if (u.atkCd > 0) return;
 
     if (u.def.role === 'healer') {
@@ -1160,8 +1220,13 @@
         if (hurt.def.role === 'guard') {
           if (u.def.passive.key === 'medic') boost *= 1 + u.def.passive.value;
           else if (u.def.doctor) boost *= 1.15;
+          if (u.def.passive.key === 'triage') boost *= 1 + u.def.passive.value;
         }
         healUnit(hurt, u.stats.atk * 0.85 * boost + (hurt.def.role === 'guard' ? hurt.maxHp * 0.02 * boost : 0), false);
+        if (hurt.def.role === 'guard' && u.def.passive.key === 'triage' && u.def.passive.shield) {
+          hurt.shield = Math.max(hurt.shield, hurt.maxHp * u.def.passive.shield);
+          hurt.shieldT = Math.max(hurt.shieldT, u.def.passive.shieldDur || 4);
+        }
         if (isDoctor && hurt.def.role === 'guard') {
           beam(u.x, u.y - 20, hurt.x, hurt.y - 20, '#4fe0a0');
         }
@@ -1879,9 +1944,11 @@
         g.shadowColor = r.color; g.shadowBlur = 18;
         g.beginPath(); g.moveTo(r.x1, r.y1); g.lineTo(r.x2, r.y2); g.stroke();
       } else {
+        const rr = r.r * (0.3 + k * 0.9);
+        if (!isFinite(rr) || rr <= 0.1) return;
         g.strokeStyle = r.color; g.lineWidth = 3 * (r.life / r.max) + 0.5;
         g.shadowColor = r.color; g.shadowBlur = 16;
-        g.beginPath(); g.arc(r.x, r.y, r.r * (0.3 + k * 0.9), 0, Math.PI * 2); g.stroke();
+        g.beginPath(); g.arc(r.x, r.y, rr, 0, Math.PI * 2); g.stroke();
       }
     });
     g.globalAlpha = 1; g.shadowBlur = 0;
