@@ -423,7 +423,7 @@
               <span class="qi">${icon('star')}</span><b>深渊试炼</b><span>30 波 · 三选一祝福 · 最高 ${s.trialBest || 0} 波</span>
             </button>
           </div>
-          <div class="news"><span class="tag">NOTICE</span><span class="small muted">原创企划 · 所有角色与剧情均为本作原创。v2.17 开放 8 章 96 关 · 101 位英雄。</span></div>
+          <div class="news"><span class="tag">NOTICE</span><span class="small muted">原创企划 · 所有角色与剧情均为本作原创。v2.18 开放 8 章 96 关 · 101 位英雄。</span></div>
         </aside>
       </div>
       ${tabbar('home')}
@@ -855,46 +855,101 @@
     playGacha(pack, 1, pool);
   }
 
+  function gachaSfx(name) {
+    if (!TW.Audio) return;
+    try { TW.Audio.sfx(name); } catch (e) {}
+  }
+  function clearGachaSfx() {
+    (state.gachaSfx || []).forEach(clearTimeout);
+    state.gachaSfx = [];
+  }
+
+  function goldIntroHTML(ssr) {
+    const dust = Array.from({ length: 34 }, () => {
+      const a = Math.random() * Math.PI * 2;
+      const r = 22 + Math.random() * 40;
+      const x = Math.cos(a) * r, y = Math.sin(a) * r;
+      return `<span style="--x:${x.toFixed(1)}vmin;--y:${y.toFixed(1)}vmin;--d:${(0.7 + Math.random() * 0.6).toFixed(2)}s;animation-delay:${(Math.random() * 0.55).toFixed(2)}s"></span>`;
+    }).join('');
+    const rays = Array.from({ length: 14 }, (_, i) =>
+      `<i style="--a:${(i * 360 / 14).toFixed(1)}deg;--d:${(i % 4) * 0.07}s"></i>`).join('');
+    const el = (D.ELEMENTS[ssr.element] || { name: '' }).name;
+    return `<div class="gx-gold">
+      <div class="gx-gold-dust">${dust}</div>
+      <div class="gx-gold-core">
+        <i class="gx-gold-ring a"></i><i class="gx-gold-ring b"></i><i class="gx-gold-ring c"></i>
+        <i class="gx-gold-orb"></i>
+      </div>
+      <div class="gx-gold-rays">${rays}</div>
+      <div class="gx-gold-pillar"></div>
+      <div class="gx-gold-figure">${figure(ssr, { big: true })}</div>
+      <div class="gx-gold-shock"></div>
+      <div class="gx-gold-title">
+        <span>GOLDEN TIDE · SSR</span>
+        <b>金潮共鸣</b>
+        <em>${esc(el)} · ${esc(ssr.name)} · ${esc(ssr.title || '')}</em>
+      </div>
+      <div class="gx-gold-flash"></div>
+    </div>`;
+  }
+
   function playGacha(pack, n, pool) {
     const fx = document.getElementById('gachaFx');
     fx.classList.remove('hidden');
     const hasSSR = pack.heroes.some(h => h.rarity === 'SSR');
-    const shards = Array.from({ length: 26 }, (_, i) =>
+    const ssr = pack.heroes.find(h => h.rarity === 'SSR' && h.id === GACHA.featured) || pack.heroes.find(h => h.rarity === 'SSR');
+    const reduce = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+    fx.classList.toggle('gx-ssr', hasSSR);
+    if (hasSSR) fx.classList.add('gx-got-ssr'); else fx.classList.remove('gx-got-ssr');
+    clearGachaSfx();
+    gachaSfx('pull');
+
+    const shards = Array.from({ length: 26 }, () =>
       `<span class="gx-shard" style="left:${5 + Math.random() * 90}%;animation-duration:${1.1 + Math.random() * 1.4}s;animation-delay:${Math.random() * 1.2}s;height:${14 + Math.random() * 22}px"></span>`).join('');
-    fx.innerHTML = `
-      <div class="gx-ring r1"></div><div class="gx-ring r2"></div><div class="gx-ring r3"></div>
-      ${shards}
-      <div class="gx-flash" id="gxFlash"></div>
-      <div class="gx-center">
-        <div class="hint">TIDE RESPONDS</div>
-        <div class="big">潮汐回应</div>
-      </div>
-      <button class="gx-skip" data-act="skipGacha">跳过</button>
-    `;
+
+    fx.innerHTML = hasSSR
+      ? `${goldIntroHTML(ssr)}<button class="gx-skip" data-act="skipGacha">跳过</button>`
+      : `<div class="gx-ring r1"></div><div class="gx-ring r2"></div><div class="gx-ring r3"></div>
+        ${shards}
+        <div class="gx-flash" id="gxFlash"></div>
+        <div class="gx-center">
+          <div class="hint">TIDE RESPONDS</div>
+          <div class="big">潮汐回应</div>
+        </div>
+        <button class="gx-skip" data-act="skipGacha">跳过</button>`;
+
+    if (hasSSR && !reduce) {
+      state.gachaSfx = [
+        setTimeout(() => { if (gachaBusy) gachaSfx('reveal_sr'); }, 520),
+        setTimeout(() => { if (gachaBusy) gachaSfx('reveal_ssr'); }, 1150),
+        setTimeout(() => { if (gachaBusy) gachaSfx('burst'); }, 1420)
+      ];
+    }
+
     const reveal = () => {
       if (!gachaBusy) return;
       gachaBusy = false;
-      if (hasSSR) {
-        const fl = document.getElementById('gxFlash');
-        if (fl) fl.classList.add('on');
-        const b = document.createElement('div');
-        b.className = 'gx-burst';
-        fx.appendChild(b);
-      }
-      renderResults(pack, n, pool);
+      clearGachaSfx();
+      if (state.gachaTimer) { clearTimeout(state.gachaTimer); state.gachaTimer = null; }
+      renderResults(pack, n, pool, hasSSR);
     };
-    const timer = setTimeout(reveal, hasSSR ? 2100 : 1550);
+    const delay = hasSSR ? (reduce ? 900 : 3200) : 1550;
+    const timer = setTimeout(reveal, delay);
     state.gachaTimer = timer;
     state.gachaReveal = reveal;
   }
 
-  function renderResults(pack, n, pool) {
+  function renderResults(pack, n, pool, hasSSR) {
     const fx = document.getElementById('gachaFx');
     state.gachaReveal = null;
+    clearGachaSfx();
+    if (state.gachaTimer) { clearTimeout(state.gachaTimer); state.gachaTimer = null; }
     const dupCount = (pack.isDup || []).filter(Boolean).length;
     const cards = pack.heroes.map((h, i) => cardHTML(h, { isNew: pack.isNew[i], isDup: pack.isDup && pack.isDup[i], delay: i * 70 })).join('');
     const againCost = n === 1 ? 120 : 1000;
+    const rain = hasSSR ? `<div class="gx-gold-rain">${Array.from({ length: 24 }, (_, i) => `<i style="left:${Math.random() * 100}%;animation-delay:${Math.random() * 1.6}s;animation-duration:${1.4 + Math.random() * 1.5}s"></i>`).join('')}</div>` : '';
     fx.innerHTML = `<div class="gx-results">
+      ${rain}
       <h2>召唤结果</h2>
       ${dupCount ? `<div class="small" style="text-align:center;color:var(--cyan-300);margin-bottom:8px">同名共鸣 +${dupCount} · 前往英雄详情升阶</div>` : ''}
       <div class="gx-grid">${cards}</div>
@@ -906,7 +961,10 @@
   }
 
   function closeGacha() {
-    document.getElementById('gachaFx').classList.add('hidden');
+    clearGachaSfx();
+    const fx = document.getElementById('gachaFx');
+    fx.classList.add('hidden');
+    fx.classList.remove('gx-ssr', 'gx-got-ssr');
     gachaBusy = false;
     state.gachaReveal = null;
     render();
@@ -1271,7 +1329,7 @@
       <div class="panel" style="margin-top:18px">
         <div class="panel-title">关于</div>
         <p class="small muted" style="margin-top:8px">《汐境回响》原创企划。所有角色、剧情、UI 与音效均为本作原创，不含任何第三方游戏素材。</p>
-        <p class="small dim" style="margin-top:6px">v2.17 · 8 章 96 关 · 101 位英雄 · 9 类怪物</p>
+        <p class="small dim" style="margin-top:6px">v2.18 · 8 章 96 关 · 101 位英雄 · 9 类怪物</p>
       </div>
       ${tabbar('more')}
     </div>`;
@@ -1885,6 +1943,7 @@
     rates() { openRates(); },
     skipGacha() {
       clearTimeout(state.gachaTimer);
+      clearGachaSfx();
       if (state.gachaReveal) state.gachaReveal();
     },
     again(el) {
